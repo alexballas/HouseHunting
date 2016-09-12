@@ -90,7 +90,8 @@ def main():
 					]
 					for diff_lines in missing_from_b: 
 						diffText += diff_lines.strip() + "\n"
-				sendMailOnDiff(diffText)
+				if diffText.strip():
+					sendMailOnDiff(diffText)
 				shutil.copy(file1, file2)
 				print "Not the same File"
 
