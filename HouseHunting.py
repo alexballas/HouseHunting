@@ -9,7 +9,6 @@ from urlparse import urlparse
 import os.path
 import shutil
 import filecmp
-from difflib import Differ
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
