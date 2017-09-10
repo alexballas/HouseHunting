@@ -3,6 +3,7 @@
 
 import urllib2
 import time
+import logging
 from bs4 import BeautifulSoup
 from urlparse import urlparse
 import os.path
@@ -14,6 +15,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from random import randint
 from time import sleep
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename='hh.log',level=logging.DEBUG)
 
 def getUrlDetails( url ):
 	parsed_uri = urlparse(url)
@@ -47,6 +50,24 @@ def sendMailOnDiff ( difftext ):
 	s.login(gmail_user, gmail_pwd)
 	s.sendmail(src, dst, msg.as_string())
 	s.close()
+
+def compare(File1,File2):
+    f1 = open(File1, 'r').readlines()
+    f2 = open(File2, 'r').readlines()
+    indexa = 0
+    indexb = 0
+    diffText = ""
+    while(1):
+      try:
+          if f1[indexa][:-1] ==  f2[indexb][:-1]:
+              indexa +=1
+              indexb +=1
+          elif f1[indexa][:-1] != f2[indexb][:-1]:
+              diffText += f1[indexa][:-1].strip() + "\n"
+              indexa += 1
+      except IndexError:
+          break
+    return diffText
 
 def main():
 
@@ -82,16 +103,16 @@ def main():
 			if filecmp.cmp(file1, file2):
 				print "No updates, exiting ..."
 			else:
-				diffText = ""
-				with open(file1) as a, open(file2) as b:
-					missing_from_b = [
-						diff[2:] for diff in Differ().compare(a.readlines(), b.readlines())
-						if diff.startswith('-')
-					]
-					for diff_lines in missing_from_b: 
-						diffText += diff_lines.strip() + "\n"
-				if diffText.strip():
-					sendMailOnDiff(diffText)
+
+				f1 = open(file1, "r")
+				f2 = open(file2, "r")
+				for line_f1 in f1:
+					logging.info('File 1 contents: %s', line_f1)
+				for line_f2 in f2:
+					logging.info('File 2 contents: %s', line_f2)
+				f1.close()
+				f2.close()
+				sendMailOnDiff(compare(file1,file2))
 				shutil.copy(file1, file2)
 				print "Not the same File"
 
