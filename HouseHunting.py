@@ -102,7 +102,6 @@ def main():
 			if filecmp.cmp(file1, file2):
 				print "No updates, exiting ..."
 			else:
-
 				f1 = open(file1, "r")
 				f2 = open(file2, "r")
 				for line_f1 in f1:
