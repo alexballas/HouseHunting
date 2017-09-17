@@ -8,7 +8,6 @@ from urlparse import urlparse
 import os.path
 import shutil
 import filecmp
-from difflib import Differ
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -48,6 +47,24 @@ def sendMailOnDiff ( difftext ):
 	s.sendmail(src, dst, msg.as_string())
 	s.close()
 
+def compare(File1,File2):
+    f1 = open(File1, 'r').readlines()
+    f2 = open(File2, 'r').readlines()
+    indexa = 0
+    indexb = 0
+    diffText = ""
+    while(1):
+      try:
+          if f1[indexa][:-1] ==  f2[indexb][:-1]:
+              indexa +=1
+              indexb +=1
+          elif f1[indexa][:-1] != f2[indexb][:-1]:
+              diffText += f1[indexa][:-1].strip() + "\n"
+              indexa += 1
+      except IndexError:
+          break
+    return diffText
+
 def main():
 
 	url = '' #CHANGE THIS
@@ -63,13 +80,12 @@ def main():
 	for element in result:
 		for last_string_elements in element.find("p").stripped_strings:
 			pass
-		f1.write(urlDetails[0][:-1] + element.find("a", {"class":"r_t"}).get('href').encode("utf-8") + "\n")
-		f1.write(last_string_elements.encode("utf-8") +"\n")
+		f1.write(urlDetails[0][:-1] + element.find("a", {"class":"r_t"}).get('href').encode("utf-8") + " - ")
+		f1.write(last_string_elements.encode("utf-8") + " - ")
 		if (element.find("li", {"class":"r_price"})):
-			f1.write(element.find("li", {"class":"r_price"}).text.encode("utf-8")+"\n")
+			f1.write(element.find("li", {"class":"r_price"}).text.encode("utf-8") + "\n")
 		else:
 			f1.write("- €\n")
-		f1.write("\n")
 
 	f1.close()
 
@@ -79,19 +95,26 @@ def main():
 			shutil.copy(file1, file2)
 	else:
 		if os.path.isfile(file1):
+			f1 = open(file1, "r")
+			f2 = open(file2, "r")
+			lines1 = sorted(f1.readlines(),key=lambda line:str(line.split()[0]))
+			lines2 = sorted(f2.readlines(),key=lambda line:str(line.split()[0]))
+			f1.close()
+			f2.close()
+			with open(file1, "w") as f:
+				for item1 in lines1:
+					print item1
+					f.write(item1)
+				f.close()
+
+			with open(file2, "w") as f:
+				for item2 in lines2:
+					f.write(item2)
+				f.close()
 			if filecmp.cmp(file1, file2):
 				print "No updates, exiting ..."
 			else:
-				diffText = ""
-				with open(file1) as a, open(file2) as b:
-					missing_from_b = [
-						diff[2:] for diff in Differ().compare(a.readlines(), b.readlines())
-						if diff.startswith('-')
-					]
-					for diff_lines in missing_from_b: 
-						diffText += diff_lines.strip() + "\n"
-				if diffText.strip():
-					sendMailOnDiff(diffText)
+				sendMailOnDiff(compare(file1,file2))
 				shutil.copy(file1, file2)
 				print "Not the same File"
 
